@@ -8,7 +8,7 @@ import { peersReducer } from './peerReducer';
 import { addPeerAction, removePeerAction } from './peerActions';
 // import useMediaRecorder from 'use-media-recorder';
 
-const host ="http://localhost:3001";
+const host ="http://localhost:5000";
 
 export const RoomContext = createContext<null | any>(null);
 
