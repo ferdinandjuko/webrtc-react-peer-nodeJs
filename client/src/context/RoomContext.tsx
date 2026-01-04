@@ -18,32 +18,35 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [me, setMe] = useState<Peer>();
     const [stream, setStream] = useState<MediaStream>();
     const [peers, dispatch] = useReducer(peersReducer, {});
+    const [participantsCount, setParticipantsCount] = useState<number>(0);
+    const [participants, setParticipants] = useState<string[]>([]);
+    const [viewersCount, setViewersCount] = useState<number>(0);
+    const [viewers, setViewers] = useState<string[]>([]);
+    const [isViewer, setIsViewer] = useState(true);
 
-    const enterRoom = ({roomId}: {roomId: "string"}) => {
-        navigate(`/room/${roomId}`)
+    const enterRoom = ({roomId, viewerStatus}: {roomId: "string", viewerStatus: boolean}) => {
+        navigate(`/room/${roomId}/${viewerStatus}`);
+        console.log("enterRoom=> ",viewerStatus);
+        setIsViewer(viewerStatus);
     };
 
     const getUsers = ({participants}: {participants: string[]}) => {
-        console.log("participants=> ",participants);
+        console.log("participants=> ",participants.length -1 );
+        setParticipantsCount(participants.length - 1);
+        setParticipants(participants);
     }
 
-    // const { startRecording, stopRecording, mediaBlob } = useMediaRecorder({
-    //     video: true,
-    //     onStop: (blob: Blob) => {
-    //         // Utilisez le blob pour l'envoyer via le socket ou d'autres moyens
-    //         console.log("Video blob:", blob);
-    //         // Exemple d'envoi à travers le socket
-    //         ws.current.emit("send-video", blob);
-    //     },
-    // });
-
-    // const [isRecording, setIsRecording] = useState(false);
-    // const [setCaptureRef, data, err] = useMediaRecorder({ isRecording });
+    const getViewer = ({ viewerId }: { viewerId: string }) => {
+        console.log("new viewer joined=> ", viewerId);
+        setViewers((prevViewers) => [...prevViewers, viewerId]);
+        setViewersCount((prevCount) => prevCount + 1);
+    };
 
     const getStream = async () => {
+        console.log("getStream=> ", isViewer);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+                video: isViewer, // permet à l'utilisateur de voir ou non sa propre vidéo
                 audio: false
             });
             setStream(stream);
@@ -71,12 +74,13 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const meId = uuidV4();
         const peer = new Peer(meId);
         setMe(peer);
+        console.log("getStreamViewer=> ", isViewer);
         getStream();
 
         ws.current.on("room-created", enterRoom);
         ws.current.on("get-users", getUsers);
         ws.current.on("user-disconnected", removePeer);
-    }, [])
+    }, []);
 
     useEffect(() => {
         if(!me) return;
@@ -89,6 +93,11 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log("peerStream=> ",peerStream);
                 dispatch(addPeerAction(peerId, peerStream));
             });
+            // Update viewers count
+            setViewersCount((prevCount) => prevCount + 1);
+            if (!participants.includes(peerId)) {
+                getViewer({ viewerId: peerId });
+            }
         })
 
         me.on('call', (call) => { // we answer the call
@@ -97,13 +106,18 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log("peerStream=> ",peerStream);
                 dispatch(addPeerAction(call.peer, peerStream));
             })
+             // Update viewers count
+             setViewersCount((prevCount) => prevCount + 1);
+            if (!participants.includes(call.peer)) {
+                getViewer({ viewerId: call.peer });
+            }
         })
     }, [me, stream]);
 
     console.log("peers=> ",{ peers });
 
     return (
-        <RoomContext.Provider value={{ ws, me, stream, peers }}>
+        <RoomContext.Provider value={{ ws, me, stream, peers, participantsCount, viewers, viewersCount }}>
             {children}
         </RoomContext.Provider>
     );
