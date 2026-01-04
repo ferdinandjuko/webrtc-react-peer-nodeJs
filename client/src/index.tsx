@@ -1,3 +1,4 @@
+// index.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
@@ -19,7 +20,7 @@ root.render(
           <Route path="" element={<Home />} />
         </Routes>
         <Routes>
-          <Route path="room/:roomId" element={<Room />} />
+          <Route path="room/:roomId/:viewerStatus" element={<Room />} />
         </Routes>
       </RoomProvider>
     </BrowserRouter>
