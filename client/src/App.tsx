@@ -5,7 +5,7 @@ import './App.css';
 import { Join } from './components/Join';
 import socketIOClient from 'socket.io-client';
 
-const WS = 'localhost:3001';
+const WS = 'localhost:5000';
 
 function App() {
 

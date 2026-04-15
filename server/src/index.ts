@@ -7,8 +7,8 @@ import { roomHandler } from "./room";
 
 const app = express();
 
-app.use(cors)
-const port = 3001;
+app.use(cors())
+const port = 5000;
 const server = http.createServer(app);
 
 const io = new Server(server, {
